@@ -18,100 +18,96 @@
 
 + (id)sharedAudioPlayer
 {
-    static AudioPlayer *sharedAudioPlayer = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        sharedAudioPlayer = [[self alloc] init];
-    });
-    return sharedAudioPlayer;
+		static AudioPlayer *sharedAudioPlayer = nil;
+		static dispatch_once_t onceToken;
+		dispatch_once(&onceToken, ^{
+				sharedAudioPlayer = [[self alloc] init];
+		});
+		return sharedAudioPlayer;
 }
 
 - (id)init {
-    if (self = [super init]) {
-        _audioPlayer = [[STKAudioPlayer alloc] init];
-    }
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(playerStateChange)
-                                                 name:MPMoviePlayerPlaybackStateDidChangeNotification
-     
-                                               object:nil];
-    
-    return self;
+		if (self = [super init]) {
+				_audioPlayer = [[STKAudioPlayer alloc] init];
+		}
+		
+		return self;
 }
 
 - (void)playMixURL:(NSString*)mixURL
 {
-    if (self.audioPlayer.state == STKAudioPlayerStateRunning)
-    {
-        [self.audioPlayer stop];
-    }
-    
-    NSLog(@"Song URL : %@", mixURL);
-    
-    [self.audioPlayer play:mixURL];
+		if (self.audioPlayer.state == STKAudioPlayerStateRunning)
+		{
+				[self.audioPlayer stop];
+		}
+		
+		NSLog(@"Song URL : %@", mixURL);
+		
+		[self.audioPlayer play:mixURL];
 }
 
 
 - (void)setupNowPlayingInfoCenter:(MixModel*)currentSong
 {
-    if (currentSong == nil)
-    {
-        [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
-        return;
-    }
-    else
-    {
-    MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithImage:currentSong.mixImage];
-    
-    NSMutableDictionary *nowPlayingInfo = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                currentSong.mixTitle, MPMediaItemPropertyTitle,
-                artwork, MPMediaItemPropertyArtwork,
-                currentSong.mixDJ, MPMediaItemPropertyArtist,
-                [NSNumber numberWithInt:1], MPNowPlayingInfoPropertyPlaybackRate,
-                nil];
-                             //[currentSong valueForKey:MPMediaItemPropertyAlbumTitle], MPMediaItemPropertyAlbumTitle,
-                             //[currentSong valueForKey:MPMediaItemPropertyAlbumTrackCount], MPMediaItemPropertyAlbumTrackCount,
-                             //[currentSong valueForKey:MPMediaItemPropertyAlbumTrackNumber], MPMediaItemPropertyAlbumTrackNumber,
-                             //[currentSong valueForKey:MPMediaItemPropertyComposer], MPMediaItemPropertyComposer,
-                             //[currentSong valueForKey:MPMediaItemPropertyDiscCount], MPMediaItemPropertyDiscCount,
-                             //[currentSong valueForKey:MPMediaItemPropertyDiscNumber], MPMediaItemPropertyDiscNumber,
-                             //[currentSong valueForKey:MPMediaItemPropertyGenre], MPMediaItemPropertyGenre,
-                             //[currentSong valueForKey:MPMediaItemPropertyPersistentID], MPMediaItemPropertyPersistentID,
-                             //[currentSong valueForKey:MPMediaItemPropertyPlaybackDuration], MPMediaItemPropertyPlaybackDuration
-                             //[NSNumber numberWithInt:self.mediaCollection.nowPlayingIndex + 1], MPNowPlayingInfoPropertyPlaybackQueueIndex,
-                             //[NSNumber numberWithInt:[self.mediaCollection count]], MPNowPlayingInfoPropertyPlaybackQueueCount, nil];
-    
-    [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nowPlayingInfo];
-        
-    NSLog(@"Info Set :%@", nowPlayingInfo[MPMediaItemPropertyArtist]);
-    for (id key in [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo) {
-        NSLog(@"key: %@, value: %@ \n", key, [[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo objectForKey:key]);
-        }
+		if (currentSong == nil)
+		{
+				[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
+				return;
+		}
+		else
+		{
+		MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithBoundsSize:currentSong.mixImage.size requestHandler:^UIImage * _Nonnull(CGSize size) {
+				return currentSong.mixImage;
+		}];
+		
+		NSMutableDictionary *nowPlayingInfo = [@{
+								MPMediaItemPropertyTitle: currentSong.mixTitle,
+								MPMediaItemPropertyArtwork: artwork,
+								MPMediaItemPropertyArtist: currentSong.mixDJ,
+								MPNowPlayingInfoPropertyPlaybackRate: @1
+		} mutableCopy];
+														 //[currentSong valueForKey:MPMediaItemPropertyAlbumTitle], MPMediaItemPropertyAlbumTitle,
+														 //[currentSong valueForKey:MPMediaItemPropertyAlbumTrackCount], MPMediaItemPropertyAlbumTrackCount,
+														 //[currentSong valueForKey:MPMediaItemPropertyAlbumTrackNumber], MPMediaItemPropertyAlbumTrackNumber,
+														 //[currentSong valueForKey:MPMediaItemPropertyComposer], MPMediaItemPropertyComposer,
+														 //[currentSong valueForKey:MPMediaItemPropertyDiscCount], MPMediaItemPropertyDiscCount,
+														 //[currentSong valueForKey:MPMediaItemPropertyDiscNumber], MPMediaItemPropertyDiscNumber,
+														 //[currentSong valueForKey:MPMediaItemPropertyGenre], MPMediaItemPropertyGenre,
+														 //[currentSong valueForKey:MPMediaItemPropertyPersistentID], MPMediaItemPropertyPersistentID,
+														 //[currentSong valueForKey:MPMediaItemPropertyPlaybackDuration], MPMediaItemPropertyPlaybackDuration
+														 //[NSNumber numberWithInt:self.mediaCollection.nowPlayingIndex + 1], MPNowPlayingInfoPropertyPlaybackQueueIndex,
+														 //[NSNumber numberWithInt:[self.mediaCollection count]], MPNowPlayingInfoPropertyPlaybackQueueCount, nil];
+		
+		[[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nowPlayingInfo];
+				
+		NSLog(@"Info Set :%@", nowPlayingInfo[MPMediaItemPropertyArtist]);
+		for (id key in [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo) {
+				NSLog(@"key: %@, value: %@ \n", key, [[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo objectForKey:key]);
+				}
 
-    }
+		}
 }
 
 - (void)setNowPlayingInfoCenterTime
 {
-    NSMutableDictionary *nowPlayingInfo = [NSMutableDictionary dictionaryWithDictionary:[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo];
-    [nowPlayingInfo setObject:[NSNumber numberWithDouble:self.audioPlayer.progress] forKey:@"MPNowPlayingInfoPropertyElapsedPlaybackTime"];
-    [nowPlayingInfo setObject:[NSNumber numberWithDouble:self.audioPlayer.duration] forKey:@"MPMediaItemPropertyPlaybackDuration"];
-    [[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nowPlayingInfo];
-    
-    for (id key in [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo) {
-        NSLog(@"key: %@, value: %@ \n", key, [[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo objectForKey:key]);
-    }
+		NSMutableDictionary *nowPlayingInfo = [NSMutableDictionary dictionaryWithDictionary:[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo];
+		nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = @(self.audioPlayer.progress);
+		nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = @(self.audioPlayer.duration);
+		[[MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:nowPlayingInfo];
+		
+		for (id key in [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo) {
+				NSLog(@"key: %@, value: %@ \n", key, [[MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo objectForKey:key]);
+		}
 }
 
 - (void)pause
 {
-    [self.audioPlayer pause];
+		[self.audioPlayer pause];
 }
 - (void)resume
 {
-    [self.audioPlayer resume];
-    [self setNowPlayingInfoCenterTime];
+		[self.audioPlayer resume];
+		[self setNowPlayingInfoCenterTime];
 }
 
 /*
@@ -119,17 +115,17 @@
  * to format with minutes and seconds
  */
 -(NSString*)timeFormat:(float)value{
-    
-    float minutes = floor(lroundf(value)/60);
-    float seconds = lroundf(value) - (minutes * 60);
-    
-    int roundedSeconds = (int) lroundf(seconds);
-    int roundedMinutes = (int) lroundf(minutes);
-    
-    NSString *time = [[NSString alloc]
-                      initWithFormat:@"%d:%02d",
-                      roundedMinutes, roundedSeconds];
-    return time;
+		
+		float minutes = floor(lroundf(value)/60);
+		float seconds = lroundf(value) - (minutes * 60);
+		
+		int roundedSeconds = (int) lroundf(seconds);
+		int roundedMinutes = (int) lroundf(minutes);
+		
+		NSString *time = [[NSString alloc]
+											initWithFormat:@"%d:%02d",
+											roundedMinutes, roundedSeconds];
+		return time;
 }
 
 /*
@@ -137,26 +133,26 @@
  * playing audio File
  */
 - (void)setCurrentAudioTime:(float)value {
-    [self.audioPlayer seekToTime:(double)value];
-    [self setNowPlayingInfoCenterTime];
+		[self.audioPlayer seekToTime:(double)value];
+		[self setNowPlayingInfoCenterTime];
 }
 
 /*
  * Get the time where audio is playing right now
  */
 - (NSTimeInterval)getCurrentAudioTime {
-    return [self.audioPlayer progress];
+		return [self.audioPlayer progress];
 }
 
 /*
  * Get the whole length of the audio file
  */
 - (float)getAudioDuration {
-    return (float)self.audioPlayer.duration;
+		return (float)self.audioPlayer.duration;
 }
 
 - (void)playerStateChange{
-    [self setNowPlayingInfoCenterTime];
+		[self setNowPlayingInfoCenterTime];
 }
 
 @end
